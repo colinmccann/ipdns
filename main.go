@@ -7,7 +7,11 @@ import (
 	"net"
 	"net/http"
 	"regexp"
+
+	myip "github.com/polds/MyIP"
 )
+
+const ipLookupURL = "http://checkip.amazonaws.com"
 
 func main() {
 	// "62.141.54.25" - heisse.de
@@ -18,13 +22,14 @@ func main() {
 	hostnames, _ := net.LookupAddr("140.82.114.3") // get []string hostnames for IP string
 	localIPAny := getLocalIP()
 	localIPExternal := getLocalIPExternal()
+	localIPPackage, _ := myip.GetMyIP()
 
 	fmt.Printf("LookupIP: %+v\n", ips)
 	fmt.Printf("ParseIP: %+v\n", netip)
 	fmt.Printf("Hostnames: %+v\n", hostnames)
 	fmt.Printf("Local any: %v\n", localIPAny)
-	fmt.Printf("Local external: %v", localIPExternal)
-
+	fmt.Printf("Local external: %v\n", localIPExternal)
+	fmt.Printf("Local package: %v", localIPPackage)
 }
 
 const URIPattern string = `^((ftp|http|https):\/\/)?(\S+(:\S*)?@)?((([1-9]\d?|1\d\d|2[01]\d|22[0-3])(\.(1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.([0-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(((([a-z\x{00a1}-\x{ffff}0-9]+-?-?_?)*[a-z\x{00a1}-\x{ffff}0-9]+)\.)?)?(([a-z\x{00a1}-\x{ffff}0-9]+-?-?_?)*[a-z\x{00a1}-\x{ffff}0-9]+)(?:\.([a-z\x{00a1}-\x{ffff}]{2,}))?)|localhost)(:(\d{1,5}))?((\/|\?|#)[^\s]*)?$`
@@ -37,16 +42,26 @@ func validateURI(uri string) bool {
 }
 
 func getLocalIPExternal() string {
-	req, err := http.Get("http://checkip.amazonaws.com")
+	req, err := http.Get(ipLookupURL)
 	if err != nil {
-		check(err)
+		// TODO - log these errors
+		return ""
 	}
 	defer req.Body.Close()
 
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		check(err)
+		return ""
 	}
+
+	// fmt.Printf("%v\n\n", string(body))
+	// isIp := net.ParseIP(string(body))
+	// fmt.Printf("%v\n\n", isIp)
+
+	// if isIp == nil {
+	// 	return ""
+	// }
+
 	return string(body)
 }
 
